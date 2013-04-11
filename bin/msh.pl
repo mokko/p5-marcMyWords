@@ -1,9 +1,24 @@
-#!/usr/bin/perl
-use warnings;
-use strict;
+#ABSTRACT: Shell editor for MARC files
 use MARC::Shell;
-
-#use Data::Dumper;
-#print map {"$_\n" if $_=~/MARC|Term/}keys %INC;
-
 MARC::Shell->new->cmdloop;
+
+=head1 SYNOPSIS
+
+    #start interactive shell from your shell
+    bash> marcmywords.pl
+
+    #learn commands
+    MARC::Shell>help
+
+=head2 OPTIONS
+
+currently there are no command line options, but eventually there should be 
+some, such as 
+    -v      verbose
+
+=head1 GLOBAL CONFIGURATION
+
+In the future there will be a configuration file like
+    ~/.marcMyWords
+
+=cut

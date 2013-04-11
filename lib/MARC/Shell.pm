@@ -3,9 +3,122 @@ package MARC::Shell;
 use strict;
 use warnings;
 use parent qw(Term::Shell);    #still necessary?
-use Moose;
+use Moose; #for load_plugins
+use Log::Dispatchouli;
+use File::Spec;                #could be in FileUtils
+use Cwd;    
+use MARC::Shell::Config;
 
-prompt_str('MARC::Shell');
+with 'MARC::Shell::Base';
+
+=head1 SYNOPSIS
+
+see msh.pl for user-facing documentation!
+
+=head1 PLUGINS
+
+MARC::Shell's commands are stored as plugins in separate files at
+    MARC::Shell::Command::$command
+
+Each command is a Moo/se role. Each command should have a help, sumary and run 
+method.
+
+=cut
+
+#TODO: currently it's still necessary to list all commands
+our @plugins = qw(load save dir info cd);
+load_plugins(@plugins); #function!
+
+=head1 NOTES
+TERM::Shell wants me to use 
+$self->{SHELL} to store data, but $self->{data} seems more appropriate
+
+data
+    context
+        dir: always save absolute path
+        file: with fully qualified paths
+        record
+
+=cut
+
+sub run_() {
+    print "blank line\n";
+}
+
+=method init
+
+We use case insensitive commands within MARC::Shell.
+
+=cut
+
+sub init {
+    my $self = shift or return;
+    $self->debug("Enter init");
+    $self->{API}->{case_ignore} = 1;
+
+    #TODO:should depend on config file or command line options
+    #my $logger = Log::Dispatchouli->new(
+    #    {   ident     => 'MARC::Shell Logger',
+    #        facility  => 'daemon',
+    #        to_stdout => 1,
+    #        debug     => 1,                      #$opt->{verbose}
+    #    }
+    #);
+
+    $self->debug("Debuging on");
+    $self->{conf}=MARC::Shell::Config->new();
+
+    
+
+
+
+    #init context
+    $self->{data}{context}{dir} = File::Spec->rel2abs(getcwd);
+    #$self->{term}->SetHistory(@{$self->_load_history()});
+
+}
+
+
+
+
+=method
+MARC::Shell path/to/directory>>
+MARC::Shell path/to/file>>
+MARC::Shell path/to/file::record>>
+
+If prompt gets too long, we can probably wrap it in two lines.
+MARC::Shell path/to/file
+identifier>>
+
+#prompt should be context sensitive, but to implement that
+#i need to understand first how to save state
+#i am guessing I can save info in $o
+
+=cut
+
+sub prompt_str {
+    my $self   = shift;    #untested
+    my $prompt = 'msh:';
+
+    #either add file or dir if they exist
+    if ($self->{data}{context}{file}) {
+        $prompt .= $self->{data}{context}{file};
+    }
+    else {
+        $prompt .= $self->{data}{context}{dir}
+          if ($self->{data}{context}{dir});
+    }
+
+    #long lines get two lines
+    $prompt .= "\/\n" if (length $prompt > 70);
+
+    #add current record if identifier exists
+    if ($self->{data}{context}{record}) {
+        $prompt .= '::' . $self->{data}{context}{record};
+    }
+
+    return $prompt . '>';
+}
 
 =head1 COMMANDS (todo)
 
@@ -49,7 +162,7 @@ prompt_str('MARC::Shell');
         change directory (not basic)
 
     dir DIRECTORY       
-        list a directory (not basic)
+        list directory contents (not basic)
         just for convenieance so you don't have to go back to shell
 
     convert INPUT_FILE OUTPUT_FILE [INPUT_FORMAT] [OUTPUT_FORMAT]   
@@ -106,58 +219,40 @@ that be displayed?
 We have to show a context, i.e. where we are. We can be in a directory, a file 
 or a record.
 
-MARC::Shell path/to/directory>>
-MARC::Shell path/to/file>>
-MARC::Shell path/to/file::identifier>>
-
-If prompt gets too long, we can probably wrap it in two lines.
-MARC::Shell path/to/file
-identifier>>
-
-
-
- opendir(my $dh, $some_dir) || error "can't opendir $some_dir: $!";
-    @dots = grep { /^\./ && -f "$some_dir/$_" } readdir($dh);
-    closedir $dh;
-
-
-=head1 CONFIGURATION
-
-Eventually, there will be a configuration file or directory
-    ~/.marcMyWords
-    
-
-=head1 PLUGINS
-
-MARC::Shell's commands are stored as plugins in separate files at
-    MARC::Shell::Command::$command
-
-Each command is a Moo/se role. Each command should have a help, sumary and run 
-method.
-
 =cut
 
-my @plugins = qw(load save);
-load_plugins (@plugins);
 
 #
 # SUBS
 #
 
+
+#
+# PLUGINS
+#
+
+=func load_plugins qw(a b c);
+
+a b c will be available as commands. Dies on error.
+
+=cut
+
 sub load_plugins {
-    #-alias seems to work only with Moose, not with Moo. 
+    #-alias seems to work only with Moose, not with Moo.
     #Alternative would be Sub::Exporter
-    my @plugins=@_;
+    my @plugins = @_;
     foreach my $plugin (@plugins) {
+        #$self->debug("about to load 'MARC::Shell::Command::$plugin'");
         with "MARC::Shell::Command::$plugin" => {
             -alias => {
-                run    => "run_$plugin",
-                help   => "help_$plugin",
-                sumary => "smry_$plugin"
+                run     => "run_$plugin",
+                help    => "help_$plugin",
+                summary => "smry_$plugin",
             },
-            -excludes => ['run', 'help', 'sumary',]
+            -excludes => [ 'run', 'help', 'summary', ] 
         };
     }
 }
+
 
 1;
