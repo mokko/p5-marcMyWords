@@ -13,8 +13,24 @@ use MooX::Types::MooseLike::Base qw (Str);
     use MARC::Shell::Config;
 
     #create config dir or dies
-    my $conf=MARC::Shell::Config->new; 
+    #you shouldn't need any arguments, except when testing
+    my $conf=MARC::Shell::Config->new;
     
+    #then access config info as usually as
+    $conf->dir;
+    #and sometimes as 
+    $conf->{dir};
+        
+
+=head1 CONFIG VALUES
+
+(It's quite possible that I forget to list something.)
+
+    dir: config dir. Directory in which config file lies in.
+    file: location of config file
+    history_file: full absolute path to history file.
+    ...
+
 =method new
 
 returns MARC::Shell::Config object. The config object is essentially a 
@@ -98,5 +114,19 @@ sub _trigger_file {
     $self->{file} = $file->stringify;
     $self->{dir}  = $file->dir->stringify;
 }
+
+
+#
+# SUBs only
+#
+
+
+
+
+sub history_file {
+    my $self=shift;
+    return Path::Class::File->new($self->dir,'history');
+}
+
 
 1;

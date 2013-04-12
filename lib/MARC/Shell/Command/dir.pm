@@ -5,7 +5,7 @@ use warnings;
 use Moo::Role;
 use File::Spec;
 
-sub summary {'List directory contents'}
+sub summary { 'List directory contents' }
 
 sub help {
     <<'END';
@@ -15,6 +15,37 @@ dir DIRECTORY
 
     TODO: current directory should be relative to context!
 END
+}
+
+sub alias { 'ls' }
+
+#appears only when I do this, but command doesn't work then
+#sub smry_ls {} #strange
+#sub help_ls {} #strange
+
+sub run {
+    my ( $self, $dir_wanted ) = @_;
+
+    if ( !$dir_wanted ) {
+        $dir_wanted = '.';    #default
+    }
+    #$self->verbose("Enter run_dir $dir_wanted\n");
+    $dir_wanted = $self->realpath_dir($dir_wanted) or return;
+
+    opendir( my $dh, $dir_wanted )
+      || $self->error("Can't open dir '$dir_wanted': $!");
+
+    #while and readdir with $_ work only since 5.11.2
+    #list absolute or relative paths? Both, just as input
+    foreach my $path ( readdir($dh) ) {
+        next if ( $path eq '.' or $path eq '..' );
+        my $fullpath = Path::Class::Dir->new( $dir_wanted, $path );
+        print "d" if ( -d $fullpath );
+        print "l" if ( -l $fullpath );
+        print "-" if ( -f $fullpath );
+        print "\t$path\n";
+    }
+    closedir $dh;
 }
 
 =head1 TODO
@@ -28,35 +59,5 @@ with 'MARC::Shell::FileUtils'
 $self->canonical_path ($path); replaces variables and other shortcuts
 
 =cut
-
-
-sub run {
-    my ($self, $dir_wanted) = @_;
-
-    if (!$dir_wanted) {
-        $dir_wanted = '.';    #default
-    }
-    $self->debug("Enter run_dir $dir_wanted\n");
-
-    if (!-d $dir_wanted) {
-        $self->error ("Directory not found: '$dir_wanted'");
-        return;
-    }
-
-    opendir(my $dh, $dir_wanted)
-      || $self->error("Can't open dir '$dir_wanted': $!");
-
-    #while and readdir with $_ work only since 5.11.2
-    #list absolute or relative paths? Both, just as input
-    foreach (readdir($dh)) {
-        my $path = File::Spec->catfile($dir_wanted, $_);
-        print "d" if (-d $path);
-        print "l" if (-l $path);
-        print "-" if (-f $path);
-        print "\t$path\n";
-    }
-    closedir $dh;
-}
-
 
 1;
