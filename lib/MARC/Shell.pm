@@ -118,8 +118,7 @@ sub init {
     my $self = shift or return;
     $self->{conf} = MARC::Shell::Config->new();
     $self->{conf}{argv_orig} = [@ARGV] || [];
-    $self->{conf}{myself} = Path::Class::File->new($0)->absolute->stringify;
-    
+
     $self->{API}->{case_ignore} = 1;
 
     #    "length=i" => \$length,    # numeric
@@ -166,14 +165,8 @@ sub prompt_str {
     my $self   = shift;    #untested
     my $prompt = 'msh:';
 
-    #either add file or dir if they exist
-    if ( $self->{data}{context}{file} ) {
-        $prompt .= $self->{data}{context}{file};
-    }
-    else {
-        $prompt .= $self->{data}{context}{dir}
-          if ( $self->{data}{context}{dir} );
-    }
+    #there should be always a current dir
+    $prompt .= $self->{data}{context}{dir};
 
     #long lines get two lines
     $prompt .= "\/\n" if ( length $prompt > 70 );

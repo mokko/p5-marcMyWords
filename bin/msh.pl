@@ -56,9 +56,8 @@ In the future there will be a configuration file like
         save a file (basic)
         default format is ?
 
-    which_file  
-        report currently opened file; 
-        can perhaps be eliminated by a clever prompt (expendable)
+    context  
+        report current directory, file currently opened etc.
 
     cd DIRECTORY
         change directory (not basic)

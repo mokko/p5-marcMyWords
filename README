@@ -1,0 +1,4 @@
+An open source MARC editor in Perl. It's basically an interactive shell 
+frontend to MARC::Record and friends. This is work in progress! Not even beta 
+yet.
+

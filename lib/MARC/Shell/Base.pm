@@ -4,6 +4,7 @@ use warnings;
 use Moo::Role;
 use Path::Class;
 use MooX::Types::MooseLike::Base qw (Str);
+use Say::Compat;
 
 #with 'MARC::Shell::History'; dont need no freaking history right now
 #with 'MARC::Shell::Plugins'; renaming of subs doesn't easily work except in Shell.pm
@@ -48,9 +49,36 @@ sub realpath_dir {
         $self->error("not a directory!");
         return;
     }
-    $dir_wanted->resolve;
 
-    return $dir_wanted;
+    return $dir_wanted->resolve->stringify;
+}
+
+sub realpath_file {
+    my ( $self, $file ) = @_;
+
+    if ( !$file ) {
+        $self->error("No file specified!");
+        return;
+    }
+
+    $file = Path::Class::File->new($file);
+
+    #mk absolute relative to context dir
+    if ( $file->is_relative ) {
+        $file =
+          Path::Class::Dir->new( $self->{data}{context}{dir}, $file );
+    }
+    if ( !-e $file ) {
+        $self->error("file does not exist!");
+        return;
+    }
+
+    if ( !-f $file ) {
+        $self->error("not a file!");
+        return;
+    }
+
+    return $file->resolve->stringify;
 }
 
 =method my $text=$self->_get_file_text($file);
@@ -89,6 +117,8 @@ well. Currently, I am not messing with $SHELL.
 
 I guess there can be only one arg at a time.
 
+Todo: see expand in Term::Shell::Enhanced.
+
 =cut
 
 sub arg_cleanup {
@@ -109,13 +139,27 @@ sub arg_cleanup {
 sub verbose {
     my $self = shift;
     my $msg = shift or return;
-    print "$msg\n" if $self->{conf}{verbose};
+    say "$msg" if $self->{conf}{verbose};
 }
 
 sub error {
     my $self = shift;
     my $msg = shift or return;
-    print "Error: $msg\n";
+    say "Error: $msg";
 }
+
+sub warn {
+    my $self = shift;
+    my $msg = shift or return;
+    say "Warning: $msg";
+}
+
+sub separator {
+    say "---------------------";
+}
+
+#
+# FUNC
+#
 
 1;

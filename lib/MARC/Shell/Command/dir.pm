@@ -17,7 +17,12 @@ dir DIRECTORY
 END
 }
 
-sub alias { 'ls' }
+sub alias { qw (ls) }
+
+#from App::Maisha
+sub run_ls  { goto &MARC::Shell::run_dir }
+sub smry_ls { "Alias to dir" }
+sub help_ls { goto &MARC::Shell::help_dir }
 
 #appears only when I do this, but command doesn't work then
 #sub smry_ls {} #strange
@@ -29,6 +34,7 @@ sub run {
     if ( !$dir_wanted ) {
         $dir_wanted = '.';    #default
     }
+
     #$self->verbose("Enter run_dir $dir_wanted\n");
     $dir_wanted = $self->realpath_dir($dir_wanted) or return;
 
