@@ -1,7 +1,8 @@
 #ABSTRACT: Load a MARC file
 package MARC::Shell::Command::open;
 use Moo::Role;
-use MARC::Batch;
+use MARC::File;
+use Say::Compat;
 
 #use MARC::Record;
 
@@ -20,36 +21,76 @@ END
 }
 
 sub run {
-    my ( $self, $file, $format ) = @_;
+    my ( $self, $filename ) = @_;
+    my $format = shift || 'USMARC';    #default
 
     if ( $self->{data}{context}{file} ) {
         $self->error("Close file before you open new one.");
         return;
     }
 
-    if ( !$format ) {
-        $format = 'USMARC';    #default
-        $self->verbose("No format specified, default to '$format'.");
-    }
+    $filename = $self->realpath_file($filename) or return;
 
-    $file = $self->realpath_file($file) or return;
+    $self->_open($filename,$format);
+    $self->verbose("File loaded: $filename as $format");
+ }
 
-    my $batch = MARC::Batch->new( $format, $file ) or die $MARC::File::ERROR;
 
-    #die not tested.
-    #$batch->strict_off();
-    $self->verbose("File loaded $file");
-    $self->{data}{context}{file} = [ $file, $batch, $format ];
+#used for re-opens
+sub _open {
+    my ($self, $filename, $format)=@_;
+    die "Bad error! Format missing" if (!$format); #should never happen!
 
-    #set context for file and record
-    #open first record
+    #die not tested
+    my $file = "MARC::File::$format"->in($filename) or die $MARC::File::ERROR;
+    $self->{data}{context}{file} = [ $filename, $format, $file ];
+   
 }
 
 sub reload_file {
     my $self = shift;
-    $self->load(
-        @{ $self->{data}{context}{file} }[0],
-        @{ $self->{data}{context}{file} }[2]
-    );
+
+    #say "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<";
+    my $filename = $self->current_filename;
+
+    #    my $filename = @{ $self->{data}{context}{file} }[0];
+    my $format = $self->current_format;
+
+    #    my $format   = @{ $self->{data}{context}{file} }[1];
+    #my $file     = @{ $self->{data}{context}{file} }[2];
+    $self->verbose("Reloading ($filename, $format)");
+    #$file->close; #probably not necessary...
+    delete $self->{data}{context}{file}; #see also run_close in close.pm
+    $self->_open( $filename, $format );
 }
+
+=method $self->current_filename; 
+
+Gets location (absolute filepath) of currently opened file.
+
+(Value gets set in open.pm.)
+=cut
+
+sub current_filename {
+    @{ $_[0]->{data}{context}{file} }[0];
+}
+
+=method $self->current_format;
+
+Gets format of current file.
+
+=cut $self->current_format;
+
+sub current_format {
+    @{ $_[0]->{data}{context}{file} }[1];
+}
+
+=method $self->current_file;
+
+=cut
+
+sub current_file {
+    @{ $_[0]->{data}{context}{file} }[2];
+}
+
 1;

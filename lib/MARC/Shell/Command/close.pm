@@ -21,7 +21,7 @@ END
 sub run {
     my $self = shift;
     #i should ask here if user really wants to close file
-    $self->{data}{context}{file} = undef;
+    delete $self->{data}{context}{file};
 }
 
 1;

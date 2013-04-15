@@ -1,5 +1,12 @@
 #ABSTRACT: Shell editor for MARC files
 use MARC::Shell;
+
+#temporary fix until I implement loading plugins from config file.
+use MARC::File::USMARC;
+use MARC::File::MicroLIF;
+use MARC::File::XML;
+use MARC::File::MARCMaker;
+
 MARC::Shell->new->cmdloop;
 
 =head1 SYNOPSIS

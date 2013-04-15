@@ -30,18 +30,19 @@ sub run {
     }
 
     if ( !$self->{data}{context}{file} ) {
-        $self->error("No file opened/loaded");
+        $self->error("No file opened!");
         return;
     }
 
     #from marclint
     my $counts = 0;
     my $errors = 0;
-    $file  = @{ $self->{data}{context}{file} }[1]; #file=batch
+    $file = @{ $self->{data}{context}{file} }[2];
     my $linter = new MARC::Lint;
 
-    while ( my $marc = $file->next() ) {
-        if ( not $marc ) {
+    my $i=1;
+    while ( my $record = $file->next() ) {
+        if ( not $record ) {
             warn $MARC::Record::ERROR;
             ++$errors;
         }
@@ -49,25 +50,26 @@ sub run {
             ++$counts;
         }
 
-        #store warnings in @warningstoreturn
-        my @warningstoreturn = ();
-
+        my @warningstoreturn = (); #store warnings in @warningstoreturn
+  
         #retrieve any decoding errors
         #get any warnings from decoding the raw MARC
-        push @warningstoreturn, $marc->warnings();
+        push @warningstoreturn, $record->warnings();
 
-        $linter->check_record($marc);
+        $linter->check_record($record);
 
         #add any warnings from MARC::Lint
         push @warningstoreturn, $linter->warnings;
-
+  
         if (@warningstoreturn) {
-            say join( $marc->title, @warningstoreturn, "\n");
+            $self->separator($i++);
+            say 'TITLE: '.$record->title;
+            say join( "\n", @warningstoreturn );
             ++$errors;
         }
-    }    # while
-    $self->reload_file; #to be able to read from it again...
-    
+    }                      # while
+    $self->reload_file;    #to be able to read from it again...
+
 }
 
 1;

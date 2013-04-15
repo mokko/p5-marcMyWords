@@ -5,6 +5,7 @@ use Moo::Role;
 use Path::Class;
 use MooX::Types::MooseLike::Base qw (Str);
 use Say::Compat;
+with 'MARC::Shell::Messages';
 
 #with 'MARC::Shell::History'; dont need no freaking history right now
 #with 'MARC::Shell::Plugins'; renaming of subs doesn't easily work except in Shell.pm
@@ -41,7 +42,7 @@ sub realpath_dir {
           Path::Class::Dir->new( $self->{data}{context}{dir}, $dir_wanted );
     }
     if ( !-e $dir_wanted ) {
-        $self->error("does not exist!");
+        $self->error("dir does not exist!");
         return;
     }
 
@@ -54,32 +55,33 @@ sub realpath_dir {
 }
 
 sub realpath_file {
-    my ( $self, $file ) = @_;
+    my ( $self, $filename ) = @_;
 
-    if ( !$file ) {
+    if ( !$filename ) {
         $self->error("No file specified!");
         return;
     }
 
-    $file = Path::Class::File->new($file);
+    $filename = Path::Class::File->new($filename);
 
     #mk absolute relative to context dir
-    if ( $file->is_relative ) {
-        $file =
-          Path::Class::Dir->new( $self->{data}{context}{dir}, $file );
+    if ( $filename->is_relative ) {
+        $filename =
+          Path::Class::Dir->new( $self->{data}{context}{dir}, $filename );
     }
-    if ( !-e $file ) {
-        $self->error("file does not exist!");
+    if ( !-e $filename ) {
+        $self->error("file does not exist: $filename!");
         return;
     }
 
-    if ( !-f $file ) {
+    if ( !-f $filename ) {
         $self->error("not a file!");
         return;
     }
 
-    return $file->resolve->stringify;
+    return $filename->resolve->stringify;
 }
+
 
 =method my $text=$self->_get_file_text($file);
 
@@ -139,6 +141,7 @@ sub arg_cleanup {
 sub verbose {
     my $self = shift;
     my $msg = shift or return;
+    $msg =~ s/\n$//;
     say "$msg" if $self->{conf}{verbose};
 }
 
@@ -155,7 +158,16 @@ sub warn {
 }
 
 sub separator {
-    say "---------------------";
+    my $self = shift;
+    my $no   = shift;
+    my $hr   = "---------------------";
+
+    say $hr;
+    if ($no) {
+        say "RECORD NO. #$no";
+        say $hr;
+    }
+
 }
 
 #
